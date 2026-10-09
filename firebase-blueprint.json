@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User ID", "maxLength": 128 },
+        "email": { "type": "string", "description": "User email address", "maxLength": 256 },
+        "name": { "type": "string", "description": "Display name", "maxLength": 128 },
+        "createdAt": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string", "description": "Unique order identifier", "maxLength": 128 },
+        "userEmail": { "type": "string", "description": "Customer email", "maxLength": 256 },
+        "userName": { "type": "string", "description": "Customer name", "maxLength": 128 },
+        "total": { "type": "number", "description": "Total amount paid" },
+        "status": { "type": "string", "description": "Current order state", "maxLength": 64 },
+        "items": { "type": "array", "description": "Purchased items" },
+        "orderDate": { "type": "string", "description": "Creation timestamp" }
+      },
+      "required": ["orderId", "userEmail", "total"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents stored by UID"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer placed orders collection"
+    }
+  }
+}

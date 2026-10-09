@@ -91,6 +91,16 @@ const authSlice = createSlice({
     setCurrentUserDirect: (state, action) => {
       state.currentUser = action.payload;
     },
+    setUser: (state, action) => {
+      state.currentUser = action.payload;
+      state.loading = false;
+      state.error = null;
+    },
+    clearUser: (state) => {
+      state.currentUser = null;
+      state.loading = false;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -134,7 +144,7 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearAuthError, setCurrentUserDirect } = authSlice.actions;
+export const { clearAuthError, setCurrentUserDirect, setUser, clearUser } = authSlice.actions;
 
 export const selectAuthState = (state) => state.auth;
 export const selectCurrentUser = createSelector(

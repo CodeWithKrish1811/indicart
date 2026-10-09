@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useAuth } from '../context/AuthContext';
-import { selectUserOrders } from '../features/orders/ordersSlice';
+import { selectUserOrders, fetchFirestoreOrdersThunk } from '../features/orders/ordersSlice';
 import { getStorageItem, STORAGE_KEYS } from '../utils/localStorage';
 import { formatCurrency } from '../utils/formatCurrency';
 import Button from '../components/common/Button';
@@ -10,10 +10,18 @@ import EmptyState from '../components/common/EmptyState';
 
 const Orders = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { currentUser } = useAuth();
 
   const email = currentUser?.email || '';
   const reduxOrders = useSelector((state) => selectUserOrders(state, email));
+
+  // Sync with Firestore on mount or email change
+  useEffect(() => {
+    if (email) {
+      dispatch(fetchFirestoreOrdersThunk(email));
+    }
+  }, [dispatch, email]);
 
   const userOrders = useMemo(() => {
     if (reduxOrders && reduxOrders.length > 0) return reduxOrders;
@@ -42,7 +50,7 @@ const Orders = () => {
       <div className="border-b border-slate-200 pb-4">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">My Orders</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Showing {userOrders.length} {userOrders.length === 1 ? 'order' : 'orders'} placed by {currentUser?.name || 'Customer'}
+          Showing {userOrders.length} {userOrders.length === 1 ? 'order' : 'orders'} placed by {currentUser?.name || 'Customer'} (Synced with Firebase)
         </p>
       </div>
 
@@ -58,10 +66,10 @@ const Orders = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-black text-[#5B3DF5] uppercase tracking-wider">
+                    <span className="text-xs font-black text-[#65A30D] uppercase tracking-wider">
                       {order.orderId}
                     </span>
-                    <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-full">
+                    <span className="px-2.5 py-0.5 bg-lime-100 text-[#0A0A0A] text-[10px] font-black rounded-full">
                       {order.status || 'Processing'}
                     </span>
                   </div>
@@ -81,7 +89,7 @@ const Orders = () => {
                     <div className="text-[11px] text-slate-500 font-medium">{itemCount} items</div>
                   </div>
                   <Link to={`/orders/${order.orderId}`}>
-                    <Button variant="outline" size="sm" className="text-xs font-bold rounded-full border-slate-300 hover:border-[#5B3DF5] hover:text-[#5B3DF5]">
+                    <Button variant="outline" size="sm" className="text-xs font-bold rounded-full border-slate-300 hover:border-[#84CC16] hover:text-[#65A30D]">
                       View Details &rarr;
                     </Button>
                   </Link>

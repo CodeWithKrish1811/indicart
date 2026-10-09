@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Connection test document
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // Orders collection: users can read their own orders and create their orders
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && isValidId(orderId) && (resource.data.userEmail == request.auth.token.email || resource.data.userId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.userEmail == request.auth.token.email || resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(orderId) && (request.resource.data.userEmail == request.auth.token.email || request.resource.data.userId == request.auth.uid);
+      allow update, delete: if false;
+    }
+  }
+}
