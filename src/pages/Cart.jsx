@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/formatCurrency';
+import { calculateItemTotal, FREE_SHIPPING_THRESHOLD } from '../utils/cartCalculations';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
 import ProductImage from '../components/common/ProductImage';
@@ -67,8 +68,8 @@ const Cart = () => {
         {/* Left Column: Cart Items List */}
         <div className="lg:col-span-8 space-y-4">
           {cartItems.map((item) => {
-            const itemPrice = typeof item.price === 'number' ? item.price : 0;
-            const itemTotal = itemPrice * item.quantity;
+            const itemPrice = typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 ? item.price : 0;
+            const itemTotal = calculateItemTotal(item);
             const isAtMaxStock = item.quantity >= (item.stock || 99);
 
             return (
@@ -276,9 +277,9 @@ const Cart = () => {
                 </span>
               </div>
 
-              {totals.subtotal < 499 && (
+              {totals.subtotal > 0 && totals.subtotal < FREE_SHIPPING_THRESHOLD && (
                 <p className="text-[10px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                  Add {formatCurrency(499 - totals.subtotal)} more to unlock <strong>FREE Shipping</strong>!
+                  Add {formatCurrency(FREE_SHIPPING_THRESHOLD - totals.subtotal)} more to unlock <strong>FREE Shipping</strong>!
                 </p>
               )}
             </div>

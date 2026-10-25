@@ -7,7 +7,7 @@ import { useDispatch } from 'react-redux';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { placeOrderThunk } from '../features/orders/ordersSlice';
-import { calculateCartTotals } from '../utils/cartCalculations';
+import { calculateCartTotals, calculateItemTotal } from '../utils/cartCalculations';
 import { formatCurrency } from '../utils/formatCurrency';
 import Button from '../components/common/Button';
 import ProductImage from '../components/common/ProductImage';
@@ -541,7 +541,7 @@ const Checkout = () => {
                         <p className="text-slate-500">Qty: {item.quantity} &times; {formatCurrency(item.price)}</p>
                       </div>
                     </div>
-                    <span className="font-black text-slate-900">{formatCurrency(item.price * item.quantity)}</span>
+                    <span className="font-black text-slate-900">{formatCurrency(calculateItemTotal(item))}</span>
                   </div>
                 ))}
               </div>

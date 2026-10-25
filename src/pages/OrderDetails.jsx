@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { selectAllOrders } from '../features/orders/ordersSlice';
 import { getStorageItem, STORAGE_KEYS } from '../utils/localStorage';
 import { formatCurrency } from '../utils/formatCurrency';
+import { calculateItemTotal } from '../utils/cartCalculations';
 import Button from '../components/common/Button';
 import ErrorMessage from '../components/common/ErrorMessage';
 import ProductImage from '../components/common/ProductImage';
@@ -119,7 +120,7 @@ const OrderDetails = () => {
                   <p className="text-slate-500">{formatCurrency(item.price)} &times; {item.quantity}</p>
                 </div>
               </div>
-              <span className="font-bold text-slate-900">{formatCurrency(item.price * item.quantity)}</span>
+              <span className="font-bold text-slate-900">{formatCurrency(calculateItemTotal(item))}</span>
             </div>
           ))}
         </div>

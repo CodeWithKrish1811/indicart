@@ -3,6 +3,7 @@ import { useLocation, Link, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectCurrentOrder } from '../features/orders/ordersSlice';
 import { formatCurrency } from '../utils/formatCurrency';
+import { calculateItemTotal } from '../utils/cartCalculations';
 import { useAuth } from '../context/AuthContext';
 import { gmailService } from '../services/gmailService';
 import { useToast } from '../context/ToastContext';
@@ -213,7 +214,7 @@ const OrderConfirmation = () => {
                   <p className="text-slate-500">{formatCurrency(item.price)} &times; {item.quantity}</p>
                 </div>
               </div>
-              <span className="font-bold text-slate-900">{formatCurrency(item.price * item.quantity)}</span>
+              <span className="font-bold text-slate-900">{formatCurrency(calculateItemTotal(item))}</span>
             </div>
           ))}
         </div>

@@ -1,6 +1,28 @@
 /**
  * Centralized cart price calculation logic
  */
+export const FREE_SHIPPING_THRESHOLD = 499;
+export const STANDARD_SHIPPING_FEE = 50;
+export const GST_RATE = 0.18;
+
+/**
+ * Calculates individual line item total safely.
+ * Handles non-numbers, negative prices, and invalid quantities.
+ */
+export const calculateItemTotal = (item) => {
+  if (!item) return 0;
+  const price =
+    typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0
+      ? item.price
+      : 0;
+  const rawQty = Math.floor(Number(item.quantity));
+  const qty = Number.isFinite(rawQty) && rawQty >= 1 ? rawQty : 1;
+  return Math.round(price * qty * 100) / 100;
+};
+
+/**
+ * Centralized cart price calculation logic
+ */
 export const calculateCartTotals = (items = [], appliedCoupon = null, deliveryFeeOverride = null) => {
   const safeItems = Array.isArray(items) ? items : [];
 
@@ -52,16 +74,18 @@ export const calculateCartTotals = (items = [], appliedCoupon = null, deliveryFe
     // Only apply discount if current subtotal meets coupon's minimum requirement
     if (subtotal >= minSubtotal) {
       if (appliedCoupon.type === 'percentage') {
-        const discountPercent =
+        const rawDiscount =
           typeof appliedCoupon.discount === 'number' && Number.isFinite(appliedCoupon.discount)
             ? appliedCoupon.discount
             : 0;
+        const discountPercent = Math.max(0, Math.min(100, rawDiscount));
         couponDiscount = Math.round(((subtotal * discountPercent) / 100) * 100) / 100;
       } else if (appliedCoupon.type === 'flat') {
-        const flatDiscount =
+        const rawFlat =
           typeof appliedCoupon.discount === 'number' && Number.isFinite(appliedCoupon.discount)
             ? appliedCoupon.discount
             : 0;
+        const flatDiscount = Math.max(0, rawFlat);
         couponDiscount = Math.min(flatDiscount, subtotal);
       }
     }
@@ -73,9 +97,9 @@ export const calculateCartTotals = (items = [], appliedCoupon = null, deliveryFe
   const taxableSubtotal = Math.max(0, subtotal - couponDiscount);
 
   // 3. Tax Calculation (18% GST on net taxable subtotal, rounded to 2 decimals)
-  const tax = taxableSubtotal > 0 ? Math.round(taxableSubtotal * 0.18 * 100) / 100 : 0;
+  const tax = taxableSubtotal > 0 ? Math.round(taxableSubtotal * GST_RATE * 100) / 100 : 0;
 
-  // 4. Shipping Calculation (Free above ₹499 subtotal, else ₹50 fixed charge; empty cart = 0)
+  // 4. Shipping Calculation (Free above FREE_SHIPPING_THRESHOLD, else STANDARD_SHIPPING_FEE; empty cart = 0)
   let shipping = 0;
   if (subtotal === 0) {
     shipping = 0;
@@ -84,10 +108,10 @@ export const calculateCartTotals = (items = [], appliedCoupon = null, deliveryFe
       typeof deliveryFeeOverride === 'number' &&
       Number.isFinite(deliveryFeeOverride) &&
       deliveryFeeOverride >= 0
-        ? deliveryFeeOverride
+        ? Math.round(deliveryFeeOverride * 100) / 100
         : 0;
-  } else if (subtotal < 499) {
-    shipping = 50;
+  } else if (subtotal < FREE_SHIPPING_THRESHOLD) {
+    shipping = STANDARD_SHIPPING_FEE;
   } else {
     shipping = 0;
   }
