@@ -1,6 +1,6 @@
 /**
  * Product Normalization & Indian Pricing Architecture for Indicart
- * Converts raw product payloads into normalized, robust IndiacartProduct objects.
+ * Converts raw product payloads into normalized, robust IndicartProduct objects.
  */
 
 export const USD_TO_INR = 83;

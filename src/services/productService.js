@@ -4,7 +4,7 @@ import { normalizeProduct, normalizeProducts } from '../features/products/produc
 /**
  * Service Abstraction Layer for Indicart Products
  * Decouples components from raw data providers (e.g. DummyJSON)
- * and guarantees normalized IndiacartProduct objects.
+ * and guarantees normalized IndicartProduct objects.
  */
 export const productService = {
   /**

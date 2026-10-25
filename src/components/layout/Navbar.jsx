@@ -44,7 +44,7 @@ const Navbar = () => {
         {/* Main Navbar Bar */}
         <div className="flex items-center justify-between h-20 gap-3 sm:gap-4 md:gap-6 w-full">
           
-          {/* 1. FAR LEFT: Custom Font Logo "Indi मार्ट", Dropdown & Mobile Trigger */}
+          {/* 1. FAR LEFT: Brand Logo "Indicart", Dropdown & Mobile Trigger */}
           <div className="flex items-center space-x-3 shrink-0">
             {/* Mobile Category Trigger */}
             <button
