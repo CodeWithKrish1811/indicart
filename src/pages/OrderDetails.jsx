@@ -61,7 +61,7 @@ const OrderDetails = () => {
               Order {order.orderId}
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Placed on {new Date(order.orderDate || Date.now()).toLocaleString('en-IN')}
+              Placed on {order.orderDate ? new Date(order.orderDate).toLocaleString('en-IN') : 'Recently'}
             </p>
           </div>
           <div className="text-right">

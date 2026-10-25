@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const SearchBar = ({ className = '', placeholder = 'Search products...' }) => {
   const [searchParams] = useSearchParams();
   const initialQuery = searchParams.get('search') || searchParams.get('q') || '';
+  const [prevQuery, setPrevQuery] = useState(initialQuery);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  if (prevQuery !== initialQuery) {
+    setPrevQuery(initialQuery);
     setSearchTerm(initialQuery);
-  }, [initialQuery]);
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();

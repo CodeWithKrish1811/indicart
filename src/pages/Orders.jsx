@@ -75,11 +75,13 @@ const Orders = () => {
                   </div>
                   <p className="text-xs text-slate-500 font-medium">
                     Placed on{' '}
-                    {new Date(order.orderDate || Date.now()).toLocaleDateString('en-IN', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                    {order.orderDate
+                      ? new Date(order.orderDate).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      : 'Recently'}
                   </p>
                 </div>
 

@@ -149,11 +149,13 @@ const OrderConfirmation = () => {
           <div>
             <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">Order Placed On</span>
             <p className="text-sm font-bold text-slate-900">
-              {new Date(order.orderDate || Date.now()).toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
+              {order.orderDate
+                ? new Date(order.orderDate).toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                : 'Recently'}
             </p>
           </div>
           <div>

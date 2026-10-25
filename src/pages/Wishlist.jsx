@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/formatCurrency';
-import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
 
 const Wishlist = () => {

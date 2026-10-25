@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   useGetProductsQuery,
@@ -9,7 +9,6 @@ import {
   applyFilterPipeline,
   extractAvailableBrands,
   countActiveFilters,
-  CATEGORY_MAP,
   getCategoryDisplayLabel,
   getCompatibleBrandsForCategory,
 } from '../features/products/productFilters';
@@ -30,7 +29,6 @@ const Products = () => {
   const filterParams = useMemo(() => parseFilterParams(searchParams), [searchParams]);
 
   const isSearch = Boolean(filterParams.search);
-  const isCategory = Boolean(filterParams.category);
 
   // Primary API query: load complete base catalog items
   const listQueryResult = useGetProductsQuery({ limit: 0, skip: 0 });
@@ -91,32 +89,35 @@ const Products = () => {
   }, [filteredAndSortedProducts, currentPage, limit]);
 
   // Helper to update URL search parameters
-  const updateUrlParams = (newParams) => {
-    const params = new URLSearchParams();
+  const updateUrlParams = useCallback(
+    (newParams) => {
+      const params = new URLSearchParams();
 
-    if (newParams.search) params.set('search', newParams.search);
-    if (newParams.category) params.set('category', newParams.category);
-    if (newParams.brand && newParams.brand.length > 0) {
-      params.set('brand', newParams.brand.join(','));
-    }
-    if (newParams.minPrice !== null && newParams.minPrice !== undefined && newParams.minPrice !== '') {
-      params.set('minPrice', newParams.minPrice.toString());
-    }
-    if (newParams.maxPrice !== null && newParams.maxPrice !== undefined && newParams.maxPrice !== '') {
-      params.set('maxPrice', newParams.maxPrice.toString());
-    }
-    if (newParams.rating !== null && newParams.rating !== undefined && newParams.rating !== '') {
-      params.set('rating', newParams.rating.toString());
-    }
-    if (newParams.sort && newParams.sort !== 'relevance') {
-      params.set('sort', newParams.sort);
-    }
-    if (newParams.page && newParams.page > 1) {
-      params.set('page', newParams.page.toString());
-    }
+      if (newParams.search) params.set('search', newParams.search);
+      if (newParams.category) params.set('category', newParams.category);
+      if (newParams.brand && newParams.brand.length > 0) {
+        params.set('brand', newParams.brand.join(','));
+      }
+      if (newParams.minPrice !== null && newParams.minPrice !== undefined && newParams.minPrice !== '') {
+        params.set('minPrice', newParams.minPrice.toString());
+      }
+      if (newParams.maxPrice !== null && newParams.maxPrice !== undefined && newParams.maxPrice !== '') {
+        params.set('maxPrice', newParams.maxPrice.toString());
+      }
+      if (newParams.rating !== null && newParams.rating !== undefined && newParams.rating !== '') {
+        params.set('rating', newParams.rating.toString());
+      }
+      if (newParams.sort && newParams.sort !== 'relevance') {
+        params.set('sort', newParams.sort);
+      }
+      if (newParams.page && newParams.page > 1) {
+        params.set('page', newParams.page.toString());
+      }
 
-    setSearchParams(params);
-  };
+      setSearchParams(params);
+    },
+    [setSearchParams]
+  );
 
   const handleFilterChange = (updatedParams) => {
     updateUrlParams(updatedParams);
@@ -167,7 +168,7 @@ const Products = () => {
         });
       }
     }
-  }, [filterParams.category, rawProducts]);
+  }, [filterParams, rawProducts, updateUrlParams]);
 
   // Check if Books category is selected
   const isBooksCategory = filterParams.category?.toLowerCase() === 'books';

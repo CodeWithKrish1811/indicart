@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { placeOrderThunk } from '../features/orders/ordersSlice';
@@ -151,7 +151,7 @@ const Checkout = () => {
       const placedOrder = await dispatch(placeOrderThunk(orderPayload)).unwrap();
       setIsSubmitting(false);
       navigate('/order-confirmation', { state: { order: placedOrder } });
-    } catch (err) {
+    } catch {
       setIsSubmitting(false);
       setPaymentError('Failed to process order. Please try again.');
     }

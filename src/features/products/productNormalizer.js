@@ -92,7 +92,7 @@ export const sanitizeBrand = (rawTitle = '', rawBrand = '') => {
  * Image Sanitization Rules
  * Ensures thumbnail and gallery images match the product accurately.
  */
-export const sanitizeProductImages = (rawThumbnail, rawImages = [], rawTitle = '') => {
+export const sanitizeProductImages = (rawThumbnail, rawImages = [], _rawTitle = '') => {
   const validImages = Array.isArray(rawImages)
     ? rawImages.filter((img) => typeof img === 'string' && img.startsWith('http'))
     : [];
