@@ -239,19 +239,28 @@ export const applyFilterPipeline = (products = [], params = {}) => {
     result = result.filter((p) => Number(p.rating || 0) >= minRating);
   }
 
-  // 6. Sorting Order Pipeline (operates on derived copied array to ensure zero data mutation)
+  // 6. Sorting Order Pipeline (operates on derived copied array with deterministic tie-breakers)
   switch (params.sort) {
     case 'price-asc':
-      result.sort((a, b) => (a.price || 0) - (b.price || 0));
+      result.sort((a, b) => {
+        const diff = Number(a?.price || 0) - Number(b?.price || 0);
+        return diff !== 0 ? diff : (a?.id || 0) - (b?.id || 0);
+      });
       break;
     case 'price-desc':
-      result.sort((a, b) => (b.price || 0) - (a.price || 0));
+      result.sort((a, b) => {
+        const diff = Number(b?.price || 0) - Number(a?.price || 0);
+        return diff !== 0 ? diff : (a?.id || 0) - (b?.id || 0);
+      });
       break;
     case 'rating-desc':
-      result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      result.sort((a, b) => {
+        const diff = Number(b?.rating || 0) - Number(a?.rating || 0);
+        return diff !== 0 ? diff : (a?.id || 0) - (b?.id || 0);
+      });
       break;
     case 'newest':
-      result.sort((a, b) => (b.id || 0) - (a.id || 0));
+      result.sort((a, b) => (b?.id || 0) - (a?.id || 0));
       break;
     case 'relevance':
     default:

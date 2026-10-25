@@ -121,7 +121,10 @@ const Products = () => {
   );
 
   const handleFilterChange = (updatedParams) => {
-    updateUrlParams(updatedParams);
+    updateUrlParams({
+      ...updatedParams,
+      page: updatedParams.page !== undefined ? updatedParams.page : 1,
+    });
   };
 
   const handleCategorySelect = (selectedSlug) => {
