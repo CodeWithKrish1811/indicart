@@ -4,6 +4,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/formatCurrency';
 import EmptyState from '../components/common/EmptyState';
+import ProductImage from '../components/common/ProductImage';
 
 const Wishlist = () => {
   const navigate = useNavigate();
@@ -48,11 +49,14 @@ const Wishlist = () => {
               className="glass-panel rounded-3xl flex flex-col justify-between overflow-hidden relative group card-hover-lift p-4 space-y-4"
             >
               {/* Product Thumbnail Container */}
-              <div className="w-full h-48 bg-[#F8F7FC] p-4 rounded-2xl flex items-center justify-center relative border border-slate-200/80">
-                <img
+              <div className="w-full h-48 bg-[#F8F7FC] p-4 rounded-2xl flex items-center justify-center relative border border-slate-200/80 overflow-hidden">
+                <ProductImage
                   src={item.thumbnail}
                   alt={item.title}
+                  fallbackText={item.brand || item.category || 'Product'}
+                  fallbackIconSize="w-10 h-10"
                   className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
+                  loading="lazy"
                 />
                 <button
                   type="button"

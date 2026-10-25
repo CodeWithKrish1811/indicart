@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { gmailService } from '../services/gmailService';
 import { useToast } from '../context/ToastContext';
 import Button from '../components/common/Button';
+import ProductImage from '../components/common/ProductImage';
 
 const OrderConfirmation = () => {
   const location = useLocation();
@@ -198,7 +199,15 @@ const OrderConfirmation = () => {
           {order.items?.map((item) => (
             <div key={item.id} className="p-4 flex items-center justify-between text-xs">
               <div className="flex items-center space-x-3">
-                <img src={item.thumbnail} alt={item.title} className="w-12 h-12 object-contain bg-white rounded border border-slate-200 p-1" />
+                <div className="w-12 h-12 rounded border border-slate-200 bg-white p-1 shrink-0 flex items-center justify-center overflow-hidden">
+                  <ProductImage
+                    src={item.thumbnail}
+                    alt={item.title}
+                    fallbackIconSize="w-5 h-5"
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
                 <div>
                   <p className="font-bold text-slate-900">{item.title}</p>
                   <p className="text-slate-500">{formatCurrency(item.price)} &times; {item.quantity}</p>

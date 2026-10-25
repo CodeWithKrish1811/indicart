@@ -10,6 +10,7 @@ import { placeOrderThunk } from '../features/orders/ordersSlice';
 import { calculateCartTotals } from '../utils/cartCalculations';
 import { formatCurrency } from '../utils/formatCurrency';
 import Button from '../components/common/Button';
+import ProductImage from '../components/common/ProductImage';
 
 /**
  * ARCHITECTURE EXPLANATION (Requirement 5):
@@ -526,7 +527,15 @@ const Checkout = () => {
                 {cartItems.map((item) => (
                   <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-3">
-                      <img src={item.thumbnail} alt={item.title} className="w-10 h-10 object-contain rounded bg-white border p-1" />
+                      <div className="w-10 h-10 rounded bg-white border border-slate-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
+                        <ProductImage
+                          src={item.thumbnail}
+                          alt={item.title}
+                          fallbackIconSize="w-5 h-5"
+                          className="max-h-full max-w-full object-contain"
+                          loading="lazy"
+                        />
+                      </div>
                       <div>
                         <p className="font-bold text-slate-900">{item.title}</p>
                         <p className="text-slate-500">Qty: {item.quantity} &times; {formatCurrency(item.price)}</p>

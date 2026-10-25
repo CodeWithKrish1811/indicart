@@ -100,14 +100,14 @@ export const sanitizeProductImages = (rawThumbnail, rawImages = [], _rawTitle = 
   const mainThumbnail =
     typeof rawThumbnail === 'string' && rawThumbnail.startsWith('http')
       ? rawThumbnail
-      : validImages[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
+      : validImages[0] || '';
 
   // Ensure thumbnail is the first item in the gallery list, without duplicates
-  const sanitizedList = Array.from(new Set([mainThumbnail, ...validImages]));
+  const sanitizedList = Array.from(new Set([mainThumbnail, ...validImages].filter(Boolean)));
 
   return {
     thumbnail: mainThumbnail,
-    images: sanitizedList.length > 0 ? sanitizedList : [mainThumbnail],
+    images: sanitizedList.length > 0 ? sanitizedList : (mainThumbnail ? [mainThumbnail] : []),
   };
 };
 

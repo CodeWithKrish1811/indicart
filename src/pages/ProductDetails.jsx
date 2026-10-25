@@ -18,6 +18,8 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 
+import ProductImage from '../components/common/ProductImage';
+
 const ProductDetails = () => {
   const { id } = useParams();
   const { showToast } = useToast();
@@ -27,7 +29,6 @@ const ProductDetails = () => {
   const { data: product, isLoading, isError, error, refetch } = useGetProductByIdQuery(id);
 
   const [selectedImage, setSelectedImage] = useState(null);
-  const [imageError, setImageError] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
   // Category & Related Products Query
@@ -79,7 +80,7 @@ const ProductDetails = () => {
 
   // Gallery calculation
   const images = product.images && product.images.length > 0 ? product.images : [product.thumbnail];
-  const activeImage = !imageError ? (selectedImage || product.thumbnail || images[0]) : null;
+  const activeImage = selectedImage || product.thumbnail || images[0] || '';
 
   // Price calculations
   const price = typeof product.price === 'number' ? product.price : 0;
@@ -145,24 +146,17 @@ const ProductDetails = () => {
         <div className="lg:col-span-6 space-y-4">
           {/* Main Large Image */}
           <div className="w-full h-80 sm:h-96 bg-[#F8F7FC] rounded-2xl border border-slate-200/80 flex items-center justify-center p-6 overflow-hidden relative shadow-inner">
-            {activeImage ? (
-              <img
-                src={activeImage}
-                alt={product.title}
-                onError={() => setImageError(true)}
-                className="max-h-full max-w-full object-contain drop-shadow-sm"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center text-slate-400 space-y-2">
-                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className="text-xs font-semibold uppercase">{product.title}</span>
-              </div>
-            )}
+            <ProductImage
+              src={activeImage}
+              alt={product.title}
+              fallbackText={product.title}
+              fallbackIconSize="w-16 h-16"
+              className="max-h-full max-w-full object-contain drop-shadow-sm"
+              loading="eager"
+            />
 
             {discountPercentage > 0 && (
-              <div className="absolute top-4 left-4">
+              <div className="absolute top-4 left-4 pointer-events-none">
                 <span className="px-3 py-1 bg-[#F4D44D] text-slate-900 text-xs font-black rounded-full shadow-sm uppercase tracking-wide">
                   {Math.round(discountPercentage)}% OFF
                 </span>
@@ -177,17 +171,19 @@ const ProductDetails = () => {
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => {
-                    setSelectedImage(img);
-                    setImageError(false);
-                  }}
-                  className={`w-20 h-20 rounded-xl border-2 p-1.5 bg-[#F8F7FC] flex items-center justify-center shrink-0 transition cursor-pointer ${
+                  onClick={() => setSelectedImage(img)}
+                  className={`w-20 h-20 rounded-xl border-2 p-1.5 bg-[#F8F7FC] flex items-center justify-center shrink-0 transition cursor-pointer overflow-hidden ${
                     activeImage === img
-                      ? 'border-[#5B3DF5] ring-2 ring-[#5B3DF5]/30 scale-105'
+                      ? 'border-[#84CC16] ring-2 ring-[#84CC16]/30 scale-105'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <img src={img} alt={`Thumbnail ${idx + 1}`} className="max-h-full max-w-full object-contain" />
+                  <ProductImage
+                    src={img}
+                    alt={`${product.title} view ${idx + 1}`}
+                    fallbackIconSize="w-6 h-6"
+                    className="max-h-full max-w-full object-contain"
+                  />
                 </button>
               ))}
             </div>

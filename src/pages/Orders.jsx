@@ -7,6 +7,7 @@ import { getStorageItem, STORAGE_KEYS } from '../utils/localStorage';
 import { formatCurrency } from '../utils/formatCurrency';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
+import ProductImage from '../components/common/ProductImage';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -103,10 +104,16 @@ const Orders = () => {
                 {order.items?.slice(0, 4).map((item, idx) => (
                   <div
                     key={idx}
-                    className="w-14 h-14 bg-[#F8F7FC] border border-slate-200/80 rounded-xl flex items-center justify-center shrink-0 p-1 shadow-xs"
+                    className="w-14 h-14 bg-[#F8F7FC] border border-slate-200/80 rounded-xl flex items-center justify-center shrink-0 p-1 shadow-xs overflow-hidden"
                     title={item.title}
                   >
-                    <img src={item.thumbnail} alt={item.title} className="max-h-full max-w-full object-contain drop-shadow-xs" />
+                    <ProductImage
+                      src={item.thumbnail}
+                      alt={item.title}
+                      fallbackIconSize="w-5 h-5"
+                      className="max-h-full max-w-full object-contain drop-shadow-xs"
+                      loading="lazy"
+                    />
                   </div>
                 ))}
                 {order.items?.length > 4 && (

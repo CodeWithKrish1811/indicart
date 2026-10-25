@@ -7,6 +7,7 @@ import { getStorageItem, STORAGE_KEYS } from '../utils/localStorage';
 import { formatCurrency } from '../utils/formatCurrency';
 import Button from '../components/common/Button';
 import ErrorMessage from '../components/common/ErrorMessage';
+import ProductImage from '../components/common/ProductImage';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -102,8 +103,14 @@ const OrderDetails = () => {
           {order.items?.map((item) => (
             <div key={item.id} className="p-4 flex items-center justify-between text-xs">
               <div className="flex items-center space-x-3">
-                <Link to={`/products/${item.id}`} className="w-12 h-12 bg-white rounded border border-slate-200 flex items-center justify-center p-1 shrink-0">
-                  <img src={item.thumbnail} alt={item.title} className="max-h-full max-w-full object-contain" />
+                <Link to={`/products/${item.id}`} className="w-12 h-12 bg-white rounded border border-slate-200 flex items-center justify-center p-1 shrink-0 overflow-hidden">
+                  <ProductImage
+                    src={item.thumbnail}
+                    alt={item.title}
+                    fallbackIconSize="w-5 h-5"
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                  />
                 </Link>
                 <div>
                   <Link to={`/products/${item.id}`} className="font-bold text-slate-900 hover:text-[#5B3DF5] transition">

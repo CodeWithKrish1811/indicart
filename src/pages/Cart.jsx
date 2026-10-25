@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/formatCurrency';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
+import ProductImage from '../components/common/ProductImage';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -80,10 +81,13 @@ const Cart = () => {
                     to={`/products/${item.id}`}
                     className="w-20 h-20 bg-[#F8F7FC] rounded-2xl border border-slate-200/80 flex items-center justify-center shrink-0 p-2 overflow-hidden hover:opacity-90 transition"
                   >
-                    <img
+                    <ProductImage
                       src={item.thumbnail}
                       alt={item.title}
+                      fallbackText={item.brand || item.category || 'Product'}
+                      fallbackIconSize="w-6 h-6"
                       className="max-h-full max-w-full object-contain drop-shadow-sm"
+                      loading="lazy"
                     />
                   </Link>
 
