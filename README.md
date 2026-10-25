@@ -188,10 +188,20 @@ The application uses Vite environment variables prefixed with `VITE_`.
    cp .env.example .env
    ```
 
-2. Configure available variables:
+2. Configure available variables (optional, with safe defaults and fallback to `firebase-applet-config.json`):
    ```env
    # Base URL for custom Axios API endpoints (defaults to empty string for direct relative calls)
    VITE_API_BASE_URL=
+
+   # Firebase configuration overrides (optional; falls back to firebase-applet-config.json)
+   VITE_FIREBASE_API_KEY=
+   VITE_FIREBASE_AUTH_DOMAIN=
+   VITE_FIREBASE_PROJECT_ID=
+   VITE_FIREBASE_STORAGE_BUCKET=
+   VITE_FIREBASE_MESSAGING_SENDER_ID=
+   VITE_FIREBASE_APP_ID=
+   VITE_FIREBASE_MEASUREMENT_ID=
+   VITE_FIREBASE_FIRESTORE_DATABASE_ID=
    ```
 
 ---
