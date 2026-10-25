@@ -29,8 +29,12 @@ const BrandLogo = ({ className = '', size = 'md' }) => {
   };
 
   return (
-    <Link to="/" className={`flex items-center ${sizeConfig.container} group select-none shrink-0 py-1 ${className}`}>
-      {/* Modern Gradient Lime Icon Badge */}
+    <Link
+      to="/"
+      aria-label="Indicart - Home"
+      className={`flex items-center ${sizeConfig.container} group select-none shrink-0 py-1 ${className}`}
+    >
+      {/* Modern Gradient Lime Icon Badge with Shopping Cart Icon */}
       <div className={`${sizeConfig.icon} bg-gradient-to-br from-[#A6E527] to-[#84CC16] flex items-center justify-center text-[#0A0A0A] shadow-md shadow-[#84CC16]/25 group-hover:scale-105 group-hover:shadow-[#84CC16]/40 transition-all duration-200 relative overflow-hidden shrink-0`}>
         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         <svg className={`${sizeConfig.svg} transition-transform duration-200 group-hover:scale-110`} viewBox="0 0 24 24" fill="currentColor">
@@ -38,13 +42,13 @@ const BrandLogo = ({ className = '', size = 'md' }) => {
         </svg>
       </div>
 
-      {/* Font Logo Style: "Indi मार्ट" */}
+      {/* Brand Logo Text: "Indicart" */}
       <div className="flex items-center tracking-tight leading-none">
         <span className={`${sizeConfig.text} font-black text-white group-hover:text-neutral-100 transition-colors`}>
           Indi
         </span>
-        <span className={`${sizeConfig.text} font-black text-[#84CC16] ml-1.5 group-hover:text-[#A6E527] transition-colors drop-shadow-[0_0_12px_rgba(132,204,22,0.45)]`}>
-          मार्ट
+        <span className={`${sizeConfig.text} font-black text-[#84CC16] ml-0.5 group-hover:text-[#A6E527] transition-colors drop-shadow-[0_0_12px_rgba(132,204,22,0.45)]`}>
+          cart
         </span>
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#84CC16] ml-1" />
       </div>
