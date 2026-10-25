@@ -3,9 +3,10 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { getCategoryDisplayLabel } from '../../features/products/productFilters';
 
 const ActiveFilters = ({ filterParams = {}, onFilterChange, onClearFilters }) => {
-  const { category, brand = [], minPrice, maxPrice, rating } = filterParams;
+  const { search, category, brand = [], minPrice, maxPrice, rating } = filterParams;
 
   const hasActiveFilters =
+    Boolean(search) ||
     Boolean(category) ||
     brand.length > 0 ||
     minPrice !== null ||
@@ -13,6 +14,10 @@ const ActiveFilters = ({ filterParams = {}, onFilterChange, onClearFilters }) =>
     rating !== null;
 
   if (!hasActiveFilters) return null;
+
+  const handleRemoveSearch = () => {
+    onFilterChange({ ...filterParams, search: '', page: 1 });
+  };
 
   const handleRemoveCategory = () => {
     onFilterChange({ ...filterParams, category: '', page: 1 });
@@ -34,6 +39,21 @@ const ActiveFilters = ({ filterParams = {}, onFilterChange, onClearFilters }) =>
   return (
     <div className="flex flex-wrap items-center gap-2 mb-4">
       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Active Filters:</span>
+
+      {/* Search Chip */}
+      {search && (
+        <span className="inline-flex items-center space-x-1 text-xs font-bold bg-[#84CC16]/15 text-[#365314] border border-[#84CC16]/40 px-3 py-1 rounded-full shadow-xs">
+          <span>Search: &ldquo;{search}&rdquo;</span>
+          <button
+            type="button"
+            onClick={handleRemoveSearch}
+            className="hover:text-black ml-1 font-extrabold cursor-pointer"
+            aria-label="Remove search filter"
+          >
+            &times;
+          </button>
+        </span>
+      )}
 
       {/* Category Chip */}
       {category && (

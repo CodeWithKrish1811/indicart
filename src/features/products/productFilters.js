@@ -70,8 +70,8 @@ const SEARCH_KEYWORD_ALIASES = {
 };
 
 export const parseFilterParams = (searchParams) => {
-  const search = searchParams.get('search') || searchParams.get('q') || '';
-  const category = searchParams.get('category') || '';
+  const search = (searchParams.get('search') || searchParams.get('q') || '').trim();
+  const category = (searchParams.get('category') || '').trim();
   const brandRaw = searchParams.get('brand') || '';
   const brand = brandRaw ? brandRaw.split(',').map((b) => b.trim()).filter(Boolean) : [];
 
@@ -121,31 +121,50 @@ export const countActiveFilters = (params) => {
 export const applyFilterPipeline = (products = [], params = {}) => {
   let result = [...products];
 
-  // 1. Search Query Matching (Client-Side Search with Keyword Aliases)
-  if (params.search) {
-    const rawQuery = params.search.toLowerCase().trim();
-    
-    let keywords = [rawQuery];
-    Object.keys(SEARCH_KEYWORD_ALIASES).forEach((key) => {
-      if (rawQuery.includes(key) || SEARCH_KEYWORD_ALIASES[key].includes(rawQuery)) {
-        keywords = Array.from(new Set([...keywords, ...SEARCH_KEYWORD_ALIASES[key]]));
+  // 1. Search Query Matching (Client-Side Search with Keyword Aliases & Case-Insensitive Token Matching)
+  const rawSearch = typeof params.search === 'string' ? params.search.trim() : '';
+  if (rawSearch) {
+    const normalizedQuery = rawSearch.toLowerCase().replace(/\s+/g, ' ');
+    const tokens = normalizedQuery.split(' ').filter(Boolean);
+
+    // Helper to test if a token or any of its semantic aliases appears in the text
+    const tokenMatches = (token, text) => {
+      if (text.includes(token)) return true;
+      for (const group of Object.values(SEARCH_KEYWORD_ALIASES)) {
+        if (group.includes(token)) {
+          if (group.some((alias) => text.includes(alias))) {
+            return true;
+          }
+        }
       }
-    });
+      return false;
+    };
 
     result = result.filter((p) => {
-      const title = (p.title || p.name || '').toLowerCase();
-      const description = (p.description || '').toLowerCase();
-      const brand = (p.brand || '').toLowerCase();
-      const category = (p.category || '').toLowerCase();
-      const tags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : '';
+      if (!p) return false;
+      const title = (p.title || p.name || '').toString().toLowerCase();
+      const description = (p.description || '').toString().toLowerCase();
+      const brand = (p.brand || '').toString().toLowerCase();
+      const category = (p.category || '').toString().toLowerCase();
+      const tags = Array.isArray(p.tags)
+        ? p.tags.join(' ').toLowerCase()
+        : typeof p.tags === 'string'
+        ? p.tags.toLowerCase()
+        : '';
 
-      return keywords.some((kw) =>
-        title.includes(kw) ||
-        description.includes(kw) ||
-        brand.includes(kw) ||
-        category.includes(kw) ||
-        tags.includes(kw)
-      );
+      const fullText = `${title} ${description} ${brand} ${category} ${tags}`;
+
+      // 1. Exact full query match
+      if (fullText.includes(normalizedQuery)) {
+        return true;
+      }
+
+      // 2. Token-level matching (every token or its alias must match in product metadata)
+      if (tokens.length > 0 && tokens.every((token) => tokenMatches(token, fullText))) {
+        return true;
+      }
+
+      return false;
     });
   }
 

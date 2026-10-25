@@ -93,8 +93,9 @@ const Products = () => {
     (newParams) => {
       const params = new URLSearchParams();
 
-      if (newParams.search) params.set('search', newParams.search);
-      if (newParams.category) params.set('category', newParams.category);
+      const trimmedSearch = typeof newParams.search === 'string' ? newParams.search.trim() : '';
+      if (trimmedSearch) params.set('search', trimmedSearch);
+      if (newParams.category) params.set('category', newParams.category.trim());
       if (newParams.brand && newParams.brand.length > 0) {
         params.set('brand', newParams.brand.join(','));
       }
@@ -141,9 +142,33 @@ const Products = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleClearAllFilters = () => {
+  // Clear search parameter while retaining other active filters
+  const handleClearSearch = () => {
+    updateUrlParams({
+      ...filterParams,
+      search: '',
+      page: 1,
+    });
+  };
+
+  // Clear sidebar facet filters while retaining search query
+  const handleClearSidebarFilters = () => {
     updateUrlParams({
       search: filterParams.search,
+      category: '',
+      brand: [],
+      minPrice: null,
+      maxPrice: null,
+      rating: null,
+      sort: 'relevance',
+      page: 1,
+    });
+  };
+
+  // Clear all filters including search
+  const handleClearAllFilters = () => {
+    updateUrlParams({
+      search: '',
       category: '',
       brand: [],
       minPrice: null,
@@ -181,12 +206,16 @@ const Products = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#84CC16]/10 to-[#F4D44D]/10 blur-3xl pointer-events-none rounded-full" />
         
         <div className="space-y-1 relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#151827] capitalize">
-            {filterParams.search
-              ? `Search Results for "${filterParams.search}"`
-              : filterParams.category
-              ? `${getCategoryDisplayLabel(filterParams.category)} Products`
-              : 'Product Discovery'}
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#151827]">
+            {filterParams.search ? (
+              <span>
+                Search Results for <span className="text-[#65A30D]">&ldquo;{filterParams.search}&rdquo;</span>
+              </span>
+            ) : filterParams.category ? (
+              `${getCategoryDisplayLabel(filterParams.category)} Products`
+            ) : (
+              'Product Discovery'
+            )}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             {filterParams.search
@@ -240,7 +269,7 @@ const Products = () => {
             filterParams={filterParams}
             availableBrands={availableBrands}
             onFilterChange={handleFilterChange}
-            onClearFilters={handleClearAllFilters}
+            onClearFilters={handleClearSidebarFilters}
           />
         </aside>
 
@@ -270,6 +299,7 @@ const Products = () => {
               error={listQueryResult.error}
               onRetry={listQueryResult.refetch}
               onClearFilters={handleClearAllFilters}
+              onClearSearch={handleClearSearch}
               searchQuery={filterParams.search}
             />
           )}
@@ -336,7 +366,7 @@ const Products = () => {
                     filterParams={filterParams}
                     availableBrands={availableBrands}
                     onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearAllFilters}
+                    onClearFilters={handleClearSidebarFilters}
                     isMobile={true}
                     onCloseMobile={() => setIsMobileFiltersOpen(false)}
                   />
