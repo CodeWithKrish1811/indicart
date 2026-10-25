@@ -69,6 +69,14 @@ const SEARCH_KEYWORD_ALIASES = {
   beauty: ['beauty', 'skincare', 'skin care', 'makeup', 'cosmetic', 'lipstick', 'mascara', 'essence', 'serum', 'eyeshadow', 'powder', 'nail polish'],
 };
 
+export const VALID_SORT_VALUES = new Set([
+  'relevance',
+  'price-asc',
+  'price-desc',
+  'rating-desc',
+  'newest',
+]);
+
 export const parseFilterParams = (searchParams) => {
   const search = (searchParams.get('search') || searchParams.get('q') || '').trim();
   const category = (searchParams.get('category') || '').trim();
@@ -77,13 +85,31 @@ export const parseFilterParams = (searchParams) => {
 
   const minPriceRaw = searchParams.get('minPrice');
   const maxPriceRaw = searchParams.get('maxPrice');
-  const minPrice = minPriceRaw !== null && minPriceRaw !== '' ? parseFloat(minPriceRaw) : null;
-  const maxPrice = maxPriceRaw !== null && maxPriceRaw !== '' ? parseFloat(maxPriceRaw) : null;
+  const minPriceParsed = minPriceRaw !== null && minPriceRaw !== '' ? parseFloat(minPriceRaw) : null;
+  const maxPriceParsed = maxPriceRaw !== null && maxPriceRaw !== '' ? parseFloat(maxPriceRaw) : null;
+
+  let minPrice =
+    minPriceParsed !== null && !isNaN(minPriceParsed) && minPriceParsed >= 0 ? minPriceParsed : null;
+  let maxPrice =
+    maxPriceParsed !== null && !isNaN(maxPriceParsed) && maxPriceParsed >= 0 ? maxPriceParsed : null;
+
+  // Auto-correct inverted price boundaries (minPrice > maxPrice)
+  if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+    const temp = minPrice;
+    minPrice = maxPrice;
+    maxPrice = temp;
+  }
 
   const ratingRaw = searchParams.get('rating');
-  const rating = ratingRaw !== null && ratingRaw !== '' ? parseFloat(ratingRaw) : null;
+  const ratingParsed = ratingRaw !== null && ratingRaw !== '' ? parseFloat(ratingRaw) : null;
+  const rating =
+    ratingParsed !== null && !isNaN(ratingParsed) && ratingParsed >= 1 && ratingParsed <= 5
+      ? ratingParsed
+      : null;
 
-  const sort = searchParams.get('sort') || 'relevance';
+  const sortRaw = (searchParams.get('sort') || '').trim().toLowerCase();
+  const sort = VALID_SORT_VALUES.has(sortRaw) ? sortRaw : 'relevance';
+
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
   const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
 
@@ -235,13 +261,20 @@ export const applyFilterPipeline = (products = [], params = {}) => {
   return result;
 };
 
-// Filter out brand selections that are incompatible with a target category
+// Filter out brand selections that are incompatible with a target category or catalog
 export const getCompatibleBrandsForCategory = (products = [], categorySlug = '', currentBrands = []) => {
   if (!currentBrands || currentBrands.length === 0) return [];
-  if (!categorySlug) return currentBrands;
 
-  const categoryProducts = applyFilterPipeline(products, { category: categorySlug });
-  const categoryBrandsSet = new Set(extractAvailableBrands(categoryProducts).map((b) => b.toLowerCase().trim()));
+  // If category is specified, scope products to that category; otherwise validate against catalog
+  const targetProducts = categorySlug
+    ? applyFilterPipeline(products, { category: categorySlug })
+    : products;
+
+  if (!targetProducts || targetProducts.length === 0) return [];
+
+  const categoryBrandsSet = new Set(
+    extractAvailableBrands(targetProducts).map((b) => b.toLowerCase().trim())
+  );
 
   return currentBrands.filter((b) => categoryBrandsSet.has(b.toLowerCase().trim()));
 };

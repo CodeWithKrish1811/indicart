@@ -12,12 +12,13 @@ const FilterDropdown = ({
   const dropdownRef = useRef(null);
 
   const categories = [
-    { label: 'All Products', slug: '', icon: '🏷️' },
+    { label: 'All Categories', slug: '', icon: '🏷️' },
     { label: 'Electronics', slug: 'electronics', icon: '⚡' },
-    { label: 'Fashion', slug: 'fashion', icon: '👗' },
-    { label: 'Home Decor', slug: 'home-living', icon: '🛋️' },
-    { label: 'Beauty', slug: 'beauty', icon: '✨' },
-    { label: 'Sports', slug: 'sports', icon: '🏃' },
+    { label: 'Fashion & Apparel', slug: 'fashion', icon: '👗' },
+    { label: 'Home & Living', slug: 'home-living', icon: '🛋️' },
+    { label: 'Beauty & Fragrance', slug: 'beauty', icon: '✨' },
+    { label: 'Sports & Active', slug: 'sports', icon: '🏃' },
+    { label: 'Books & Stationeries', slug: 'books', icon: '📚' },
     { label: 'Deals & Offers', slug: 'deals', icon: '🔥' },
   ];
 
@@ -31,7 +32,9 @@ const FilterDropdown = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const activeItem = categories.find((c) => c.slug === selectedCategory) || categories[0];
+  const normalizedSelected = (selectedCategory || '').toLowerCase().trim();
+  const activeItem =
+    categories.find((c) => c.slug.toLowerCase() === normalizedSelected) || categories[0];
 
   return (
     <div className={`relative inline-block ${className}`} ref={dropdownRef}>
@@ -63,7 +66,7 @@ const FilterDropdown = ({
             Select Category Filter
           </div>
           {categories.map((cat) => {
-            const isSelected = cat.slug === selectedCategory;
+            const isSelected = cat.slug.toLowerCase() === normalizedSelected;
             return (
               <button
                 key={cat.slug || 'all'}

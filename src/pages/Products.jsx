@@ -181,9 +181,9 @@ const Products = () => {
 
   const activeFilterCount = countActiveFilters(filterParams);
 
-  // Auto-clear incompatible brand filters when category changes
+  // Auto-clear incompatible or stale brand filters when category changes or from invalid URLs
   useEffect(() => {
-    if (filterParams.category && filterParams.brand && filterParams.brand.length > 0 && rawProducts.length > 0) {
+    if (filterParams.brand && filterParams.brand.length > 0 && rawProducts.length > 0) {
       const compatibleBrands = getCompatibleBrandsForCategory(rawProducts, filterParams.category, filterParams.brand);
       if (compatibleBrands.length !== filterParams.brand.length) {
         updateUrlParams({
@@ -194,6 +194,16 @@ const Products = () => {
       }
     }
   }, [filterParams, rawProducts, updateUrlParams]);
+
+  // Synchronize URL page parameter if newly applied filters reduce totalPages below active page
+  useEffect(() => {
+    if (filterParams.page > totalPages && totalPages > 0) {
+      updateUrlParams({
+        ...filterParams,
+        page: totalPages > 1 ? totalPages : 1,
+      });
+    }
+  }, [filterParams, totalPages, updateUrlParams]);
 
   // Check if Books category is selected
   const isBooksCategory = filterParams.category?.toLowerCase() === 'books';

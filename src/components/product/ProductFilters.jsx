@@ -59,8 +59,22 @@ const ProductFilters = ({
 
   const handlePriceApply = (e) => {
     e.preventDefault();
-    const minVal = minPriceInput !== '' && !isNaN(minPriceInput) ? parseFloat(minPriceInput) : null;
-    const maxVal = maxPriceInput !== '' && !isNaN(maxPriceInput) ? parseFloat(maxPriceInput) : null;
+    let minVal =
+      minPriceInput !== '' && !isNaN(minPriceInput)
+        ? Math.max(0, parseFloat(minPriceInput))
+        : null;
+    let maxVal =
+      maxPriceInput !== '' && !isNaN(maxPriceInput)
+        ? Math.max(0, parseFloat(maxPriceInput))
+        : null;
+
+    // Auto-swap if minPrice exceeds maxPrice
+    if (minVal !== null && maxVal !== null && minVal > maxVal) {
+      const temp = minVal;
+      minVal = maxVal;
+      maxVal = temp;
+    }
+
     onFilterChange({
       ...filterParams,
       minPrice: minVal,
