@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Badge from '../common/Badge';
 
 const CategoryCard = ({ category }) => {
   if (!category) return null;

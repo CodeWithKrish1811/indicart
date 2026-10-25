@@ -5,8 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { selectAllOrders } from '../features/orders/ordersSlice';
 import { getStorageItem, STORAGE_KEYS } from '../utils/localStorage';
 import { formatCurrency } from '../utils/formatCurrency';
+import { calculateItemTotal } from '../utils/cartCalculations';
 import Button from '../components/common/Button';
 import ErrorMessage from '../components/common/ErrorMessage';
+import ProductImage from '../components/common/ProductImage';
 
 const OrderDetails = () => {
   const { id } = useParams();
@@ -61,7 +63,7 @@ const OrderDetails = () => {
               Order {order.orderId}
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Placed on {new Date(order.orderDate || Date.now()).toLocaleString('en-IN')}
+              Placed on {order.orderDate ? new Date(order.orderDate).toLocaleString('en-IN') : 'Recently'}
             </p>
           </div>
           <div className="text-right">
@@ -102,8 +104,14 @@ const OrderDetails = () => {
           {order.items?.map((item) => (
             <div key={item.id} className="p-4 flex items-center justify-between text-xs">
               <div className="flex items-center space-x-3">
-                <Link to={`/products/${item.id}`} className="w-12 h-12 bg-white rounded border border-slate-200 flex items-center justify-center p-1 shrink-0">
-                  <img src={item.thumbnail} alt={item.title} className="max-h-full max-w-full object-contain" />
+                <Link to={`/products/${item.id}`} className="w-12 h-12 bg-white rounded border border-slate-200 flex items-center justify-center p-1 shrink-0 overflow-hidden">
+                  <ProductImage
+                    src={item.thumbnail}
+                    alt={item.title}
+                    fallbackIconSize="w-5 h-5"
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                  />
                 </Link>
                 <div>
                   <Link to={`/products/${item.id}`} className="font-bold text-slate-900 hover:text-[#5B3DF5] transition">
@@ -112,7 +120,7 @@ const OrderDetails = () => {
                   <p className="text-slate-500">{formatCurrency(item.price)} &times; {item.quantity}</p>
                 </div>
               </div>
-              <span className="font-bold text-slate-900">{formatCurrency(item.price * item.quantity)}</span>
+              <span className="font-bold text-slate-900">{formatCurrency(calculateItemTotal(item))}</span>
             </div>
           ))}
         </div>

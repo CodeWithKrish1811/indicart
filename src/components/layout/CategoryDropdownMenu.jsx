@@ -8,6 +8,14 @@ const CategoryDropdownMenu = ({ className = '' }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const currentLocationKey = location.pathname + location.search;
+  const [prevLocationKey, setPrevLocationKey] = useState(currentLocationKey);
+
+  if (prevLocationKey !== currentLocationKey) {
+    setPrevLocationKey(currentLocationKey);
+    setIsOpen(false);
+  }
+
   const searchParams = new URLSearchParams(location.search);
   const currentCategory = location.pathname === '/products' ? (searchParams.get('category') || '') : null;
 
@@ -118,11 +126,6 @@ const CategoryDropdownMenu = ({ className = '' }) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
-
-  // Close on route transition
-  useEffect(() => {
-    setIsOpen(false);
-  }, [location.pathname, location.search]);
 
   const handleSelect = (slug) => {
     setIsOpen(false);

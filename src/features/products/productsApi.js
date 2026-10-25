@@ -26,10 +26,12 @@ export const productsApi = createApi({
       query: () => 'products/categories',
     }),
 
-    // Search products by keyword
+    // Search products by keyword (cleanly trimmed to avoid duplicate cache queries)
     searchProducts: builder.query({
-      query: ({ q = '', limit = 12, skip = 0 } = {}) =>
-        `products/search?q=${encodeURIComponent(q)}&limit=${limit}&skip=${skip}`,
+      query: ({ q = '', limit = 12, skip = 0 } = {}) => {
+        const cleanQ = typeof q === 'string' ? q.trim() : '';
+        return `products/search?q=${encodeURIComponent(cleanQ)}&limit=${limit}&skip=${skip}`;
+      },
       transformResponse: (response) => ({
         ...response,
         products: normalizeProducts(response.products || []),

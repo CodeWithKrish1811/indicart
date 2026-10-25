@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatCurrency } from '../utils/formatCurrency';
+import { calculateItemTotal, FREE_SHIPPING_THRESHOLD } from '../utils/cartCalculations';
 import Button from '../components/common/Button';
 import EmptyState from '../components/common/EmptyState';
+import ProductImage from '../components/common/ProductImage';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ const Cart = () => {
     appliedCoupon,
     increaseQuantity,
     decreaseQuantity,
+    updateQuantity,
     removeFromCart,
     moveToWishlist,
     applyCouponCode,
@@ -65,8 +68,8 @@ const Cart = () => {
         {/* Left Column: Cart Items List */}
         <div className="lg:col-span-8 space-y-4">
           {cartItems.map((item) => {
-            const itemPrice = typeof item.price === 'number' ? item.price : 0;
-            const itemTotal = itemPrice * item.quantity;
+            const itemPrice = typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 ? item.price : 0;
+            const itemTotal = calculateItemTotal(item);
             const isAtMaxStock = item.quantity >= (item.stock || 99);
 
             return (
@@ -80,10 +83,13 @@ const Cart = () => {
                     to={`/products/${item.id}`}
                     className="w-20 h-20 bg-[#F8F7FC] rounded-2xl border border-slate-200/80 flex items-center justify-center shrink-0 p-2 overflow-hidden hover:opacity-90 transition"
                   >
-                    <img
+                    <ProductImage
                       src={item.thumbnail}
                       alt={item.title}
+                      fallbackText={item.brand || item.category || 'Product'}
+                      fallbackIconSize="w-6 h-6"
                       className="max-h-full max-w-full object-contain drop-shadow-sm"
+                      loading="lazy"
                     />
                   </Link>
 
@@ -112,17 +118,38 @@ const Cart = () => {
                       type="button"
                       disabled={item.quantity <= 1}
                       onClick={() => decreaseQuantity(item.id)}
+                      aria-label={`Decrease quantity of ${item.title}`}
                       className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition font-bold text-sm cursor-pointer"
                     >
                       -
                     </button>
-                    <span className="w-10 text-center text-xs font-bold text-slate-800">
-                      {item.quantity}
-                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={item.stock || 99}
+                      value={item.quantity}
+                      aria-label={`Quantity for ${item.title}`}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') return;
+                        const num = parseInt(val, 10);
+                        if (!Number.isNaN(num) && num >= 1) {
+                          updateQuantity(item.id, num);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const num = parseInt(e.target.value, 10);
+                        if (Number.isNaN(num) || num < 1) {
+                          e.target.value = item.quantity;
+                        }
+                      }}
+                      className="w-12 text-center text-xs font-bold text-slate-800 bg-transparent border-x border-slate-200 focus:outline-none focus:bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
                     <button
                       type="button"
                       disabled={isAtMaxStock}
                       onClick={() => increaseQuantity(item.id)}
+                      aria-label={`Increase quantity of ${item.title}`}
                       className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition font-bold text-sm cursor-pointer"
                     >
                       +
@@ -223,12 +250,16 @@ const Cart = () => {
                 </div>
               )}
 
-              {totals.couponDiscount > 0 && (
+              {totals.couponDiscount > 0 ? (
                 <div className="flex justify-between text-emerald-700 font-bold">
                   <span>Coupon Discount ({appliedCoupon?.code})</span>
                   <span>-{formatCurrency(totals.couponDiscount)}</span>
                 </div>
-              )}
+              ) : appliedCoupon && appliedCoupon.minSubtotal && totals.subtotal < appliedCoupon.minSubtotal ? (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800">
+                  Coupon <strong>{appliedCoupon.code}</strong> requires minimum cart subtotal of {formatCurrency(appliedCoupon.minSubtotal)}. Add {formatCurrency(appliedCoupon.minSubtotal - totals.subtotal)} more to activate discount.
+                </div>
+              ) : null}
 
               <div className="flex justify-between">
                 <span>Estimated Tax (18% GST)</span>
@@ -246,9 +277,9 @@ const Cart = () => {
                 </span>
               </div>
 
-              {totals.subtotal < 499 && (
+              {totals.subtotal > 0 && totals.subtotal < FREE_SHIPPING_THRESHOLD && (
                 <p className="text-[10px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
-                  Add {formatCurrency(499 - totals.subtotal)} more to unlock <strong>FREE Shipping</strong>!
+                  Add {formatCurrency(FREE_SHIPPING_THRESHOLD - totals.subtotal)} more to unlock <strong>FREE Shipping</strong>!
                 </p>
               )}
             </div>

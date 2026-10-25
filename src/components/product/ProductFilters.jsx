@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   countActiveFilters,
   CUSTOMER_FACING_CATEGORIES,
 } from '../../features/products/productFilters';
-import Button from '../common/Button';
 
 const ProductFilters = ({
   filterParams = {},
@@ -16,17 +15,20 @@ const ProductFilters = ({
   // Strict customer-facing categories list (Bug 1 Fix)
   const categoriesList = CUSTOMER_FACING_CATEGORIES;
 
-  const [minPriceInput, setMinPriceInput] = useState(
-    filterParams.minPrice !== null && filterParams.minPrice !== undefined ? filterParams.minPrice : ''
-  );
-  const [maxPriceInput, setMaxPriceInput] = useState(
-    filterParams.maxPrice !== null && filterParams.maxPrice !== undefined ? filterParams.maxPrice : ''
-  );
+  const targetMin = filterParams.minPrice !== null && filterParams.minPrice !== undefined ? filterParams.minPrice : '';
+  const targetMax = filterParams.maxPrice !== null && filterParams.maxPrice !== undefined ? filterParams.maxPrice : '';
 
-  useEffect(() => {
-    setMinPriceInput(filterParams.minPrice !== null && filterParams.minPrice !== undefined ? filterParams.minPrice : '');
-    setMaxPriceInput(filterParams.maxPrice !== null && filterParams.maxPrice !== undefined ? filterParams.maxPrice : '');
-  }, [filterParams.minPrice, filterParams.maxPrice]);
+  const [prevMinPrice, setPrevMinPrice] = useState(targetMin);
+  const [prevMaxPrice, setPrevMaxPrice] = useState(targetMax);
+  const [minPriceInput, setMinPriceInput] = useState(targetMin);
+  const [maxPriceInput, setMaxPriceInput] = useState(targetMax);
+
+  if (prevMinPrice !== targetMin || prevMaxPrice !== targetMax) {
+    setPrevMinPrice(targetMin);
+    setPrevMaxPrice(targetMax);
+    setMinPriceInput(targetMin);
+    setMaxPriceInput(targetMax);
+  }
 
   const activeCount = countActiveFilters(filterParams);
 
@@ -57,8 +59,22 @@ const ProductFilters = ({
 
   const handlePriceApply = (e) => {
     e.preventDefault();
-    const minVal = minPriceInput !== '' && !isNaN(minPriceInput) ? parseFloat(minPriceInput) : null;
-    const maxVal = maxPriceInput !== '' && !isNaN(maxPriceInput) ? parseFloat(maxPriceInput) : null;
+    let minVal =
+      minPriceInput !== '' && !isNaN(minPriceInput)
+        ? Math.max(0, parseFloat(minPriceInput))
+        : null;
+    let maxVal =
+      maxPriceInput !== '' && !isNaN(maxPriceInput)
+        ? Math.max(0, parseFloat(maxPriceInput))
+        : null;
+
+    // Auto-swap if minPrice exceeds maxPrice
+    if (minVal !== null && maxVal !== null && minVal > maxVal) {
+      const temp = minVal;
+      minVal = maxVal;
+      maxVal = temp;
+    }
+
     onFilterChange({
       ...filterParams,
       minPrice: minVal,

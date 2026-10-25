@@ -16,9 +16,10 @@ const ProductSort = ({ currentSort = 'relevance', onSortChange }) => {
       </label>
       <select
         id="product-sort-select"
+        aria-label="Sort products"
         value={currentSort}
         onChange={(e) => onSortChange(e.target.value)}
-        className="bg-white border border-slate-200 text-slate-800 text-xs font-medium rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-200 cursor-pointer shadow-2xs"
+        className="bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl px-3 py-2 focus:outline-none focus:border-[#84CC16] focus:ring-1 focus:ring-[#84CC16]/30 cursor-pointer shadow-xs transition"
       >
         {SORT_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>

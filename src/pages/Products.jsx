@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   useGetProductsQuery,
@@ -9,7 +9,6 @@ import {
   applyFilterPipeline,
   extractAvailableBrands,
   countActiveFilters,
-  CATEGORY_MAP,
   getCategoryDisplayLabel,
   getCompatibleBrandsForCategory,
 } from '../features/products/productFilters';
@@ -30,7 +29,6 @@ const Products = () => {
   const filterParams = useMemo(() => parseFilterParams(searchParams), [searchParams]);
 
   const isSearch = Boolean(filterParams.search);
-  const isCategory = Boolean(filterParams.category);
 
   // Primary API query: load complete base catalog items
   const listQueryResult = useGetProductsQuery({ limit: 0, skip: 0 });
@@ -91,35 +89,42 @@ const Products = () => {
   }, [filteredAndSortedProducts, currentPage, limit]);
 
   // Helper to update URL search parameters
-  const updateUrlParams = (newParams) => {
-    const params = new URLSearchParams();
+  const updateUrlParams = useCallback(
+    (newParams) => {
+      const params = new URLSearchParams();
 
-    if (newParams.search) params.set('search', newParams.search);
-    if (newParams.category) params.set('category', newParams.category);
-    if (newParams.brand && newParams.brand.length > 0) {
-      params.set('brand', newParams.brand.join(','));
-    }
-    if (newParams.minPrice !== null && newParams.minPrice !== undefined && newParams.minPrice !== '') {
-      params.set('minPrice', newParams.minPrice.toString());
-    }
-    if (newParams.maxPrice !== null && newParams.maxPrice !== undefined && newParams.maxPrice !== '') {
-      params.set('maxPrice', newParams.maxPrice.toString());
-    }
-    if (newParams.rating !== null && newParams.rating !== undefined && newParams.rating !== '') {
-      params.set('rating', newParams.rating.toString());
-    }
-    if (newParams.sort && newParams.sort !== 'relevance') {
-      params.set('sort', newParams.sort);
-    }
-    if (newParams.page && newParams.page > 1) {
-      params.set('page', newParams.page.toString());
-    }
+      const trimmedSearch = typeof newParams.search === 'string' ? newParams.search.trim() : '';
+      if (trimmedSearch) params.set('search', trimmedSearch);
+      if (newParams.category) params.set('category', newParams.category.trim());
+      if (newParams.brand && newParams.brand.length > 0) {
+        params.set('brand', newParams.brand.join(','));
+      }
+      if (newParams.minPrice !== null && newParams.minPrice !== undefined && newParams.minPrice !== '') {
+        params.set('minPrice', newParams.minPrice.toString());
+      }
+      if (newParams.maxPrice !== null && newParams.maxPrice !== undefined && newParams.maxPrice !== '') {
+        params.set('maxPrice', newParams.maxPrice.toString());
+      }
+      if (newParams.rating !== null && newParams.rating !== undefined && newParams.rating !== '') {
+        params.set('rating', newParams.rating.toString());
+      }
+      if (newParams.sort && newParams.sort !== 'relevance') {
+        params.set('sort', newParams.sort);
+      }
+      if (newParams.page && newParams.page > 1) {
+        params.set('page', newParams.page.toString());
+      }
 
-    setSearchParams(params);
-  };
+      setSearchParams(params);
+    },
+    [setSearchParams]
+  );
 
   const handleFilterChange = (updatedParams) => {
-    updateUrlParams(updatedParams);
+    updateUrlParams({
+      ...updatedParams,
+      page: updatedParams.page !== undefined ? updatedParams.page : 1,
+    });
   };
 
   const handleCategorySelect = (selectedSlug) => {
@@ -140,7 +145,17 @@ const Products = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleClearAllFilters = () => {
+  // Clear search parameter while retaining other active filters
+  const handleClearSearch = () => {
+    updateUrlParams({
+      ...filterParams,
+      search: '',
+      page: 1,
+    });
+  };
+
+  // Clear sidebar facet filters while retaining search query
+  const handleClearSidebarFilters = () => {
     updateUrlParams({
       search: filterParams.search,
       category: '',
@@ -153,11 +168,25 @@ const Products = () => {
     });
   };
 
+  // Clear all filters including search
+  const handleClearAllFilters = () => {
+    updateUrlParams({
+      search: '',
+      category: '',
+      brand: [],
+      minPrice: null,
+      maxPrice: null,
+      rating: null,
+      sort: 'relevance',
+      page: 1,
+    });
+  };
+
   const activeFilterCount = countActiveFilters(filterParams);
 
-  // Auto-clear incompatible brand filters when category changes
+  // Auto-clear incompatible or stale brand filters when category changes or from invalid URLs
   useEffect(() => {
-    if (filterParams.category && filterParams.brand && filterParams.brand.length > 0 && rawProducts.length > 0) {
+    if (filterParams.brand && filterParams.brand.length > 0 && rawProducts.length > 0) {
       const compatibleBrands = getCompatibleBrandsForCategory(rawProducts, filterParams.category, filterParams.brand);
       if (compatibleBrands.length !== filterParams.brand.length) {
         updateUrlParams({
@@ -167,7 +196,17 @@ const Products = () => {
         });
       }
     }
-  }, [filterParams.category, rawProducts]);
+  }, [filterParams, rawProducts, updateUrlParams]);
+
+  // Synchronize URL page parameter if newly applied filters reduce totalPages below active page
+  useEffect(() => {
+    if (filterParams.page > totalPages && totalPages > 0) {
+      updateUrlParams({
+        ...filterParams,
+        page: totalPages > 1 ? totalPages : 1,
+      });
+    }
+  }, [filterParams, totalPages, updateUrlParams]);
 
   // Check if Books category is selected
   const isBooksCategory = filterParams.category?.toLowerCase() === 'books';
@@ -180,12 +219,16 @@ const Products = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#84CC16]/10 to-[#F4D44D]/10 blur-3xl pointer-events-none rounded-full" />
         
         <div className="space-y-1 relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#151827] capitalize">
-            {filterParams.search
-              ? `Search Results for "${filterParams.search}"`
-              : filterParams.category
-              ? `${getCategoryDisplayLabel(filterParams.category)} Products`
-              : 'Product Discovery'}
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#151827]">
+            {filterParams.search ? (
+              <span>
+                Search Results for <span className="text-[#65A30D]">&ldquo;{filterParams.search}&rdquo;</span>
+              </span>
+            ) : filterParams.category ? (
+              `${getCategoryDisplayLabel(filterParams.category)} Products`
+            ) : (
+              'Product Discovery'
+            )}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             {filterParams.search
@@ -239,7 +282,7 @@ const Products = () => {
             filterParams={filterParams}
             availableBrands={availableBrands}
             onFilterChange={handleFilterChange}
-            onClearFilters={handleClearAllFilters}
+            onClearFilters={handleClearSidebarFilters}
           />
         </aside>
 
@@ -269,6 +312,7 @@ const Products = () => {
               error={listQueryResult.error}
               onRetry={listQueryResult.refetch}
               onClearFilters={handleClearAllFilters}
+              onClearSearch={handleClearSearch}
               searchQuery={filterParams.search}
             />
           )}
@@ -335,7 +379,7 @@ const Products = () => {
                     filterParams={filterParams}
                     availableBrands={availableBrands}
                     onFilterChange={handleFilterChange}
-                    onClearFilters={handleClearAllFilters}
+                    onClearFilters={handleClearSidebarFilters}
                     isMobile={true}
                     onCloseMobile={() => setIsMobileFiltersOpen(false)}
                   />

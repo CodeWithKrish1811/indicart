@@ -11,6 +11,7 @@ const ProductGrid = ({
   error = null,
   onRetry,
   onClearFilters,
+  onClearSearch,
   searchQuery = '',
 }) => {
   if (isLoading) {
@@ -31,9 +32,13 @@ const ProductGrid = ({
     return (
       <EmptyState
         title={searchQuery ? `No products found for "${searchQuery}"` : 'No products match your filters'}
-        message="Try clearing some of your active filters or searching for a different item."
-        actionText="Clear All Filters"
-        onAction={onClearFilters}
+        message={
+          searchQuery
+            ? 'We couldn\'t find any items matching your search term. Check the spelling or try searching for a different item.'
+            : 'Try clearing some of your active filters to see more products.'
+        }
+        actionText={searchQuery ? 'Clear Search' : 'Clear All Filters'}
+        onAction={searchQuery && onClearSearch ? onClearSearch : onClearFilters}
       />
     );
   }

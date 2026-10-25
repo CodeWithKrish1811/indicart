@@ -69,21 +69,47 @@ const SEARCH_KEYWORD_ALIASES = {
   beauty: ['beauty', 'skincare', 'skin care', 'makeup', 'cosmetic', 'lipstick', 'mascara', 'essence', 'serum', 'eyeshadow', 'powder', 'nail polish'],
 };
 
+export const VALID_SORT_VALUES = new Set([
+  'relevance',
+  'price-asc',
+  'price-desc',
+  'rating-desc',
+  'newest',
+]);
+
 export const parseFilterParams = (searchParams) => {
-  const search = searchParams.get('search') || searchParams.get('q') || '';
-  const category = searchParams.get('category') || '';
+  const search = (searchParams.get('search') || searchParams.get('q') || '').trim();
+  const category = (searchParams.get('category') || '').trim();
   const brandRaw = searchParams.get('brand') || '';
   const brand = brandRaw ? brandRaw.split(',').map((b) => b.trim()).filter(Boolean) : [];
 
   const minPriceRaw = searchParams.get('minPrice');
   const maxPriceRaw = searchParams.get('maxPrice');
-  const minPrice = minPriceRaw !== null && minPriceRaw !== '' ? parseFloat(minPriceRaw) : null;
-  const maxPrice = maxPriceRaw !== null && maxPriceRaw !== '' ? parseFloat(maxPriceRaw) : null;
+  const minPriceParsed = minPriceRaw !== null && minPriceRaw !== '' ? parseFloat(minPriceRaw) : null;
+  const maxPriceParsed = maxPriceRaw !== null && maxPriceRaw !== '' ? parseFloat(maxPriceRaw) : null;
+
+  let minPrice =
+    minPriceParsed !== null && !isNaN(minPriceParsed) && minPriceParsed >= 0 ? minPriceParsed : null;
+  let maxPrice =
+    maxPriceParsed !== null && !isNaN(maxPriceParsed) && maxPriceParsed >= 0 ? maxPriceParsed : null;
+
+  // Auto-correct inverted price boundaries (minPrice > maxPrice)
+  if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+    const temp = minPrice;
+    minPrice = maxPrice;
+    maxPrice = temp;
+  }
 
   const ratingRaw = searchParams.get('rating');
-  const rating = ratingRaw !== null && ratingRaw !== '' ? parseFloat(ratingRaw) : null;
+  const ratingParsed = ratingRaw !== null && ratingRaw !== '' ? parseFloat(ratingRaw) : null;
+  const rating =
+    ratingParsed !== null && !isNaN(ratingParsed) && ratingParsed >= 1 && ratingParsed <= 5
+      ? ratingParsed
+      : null;
 
-  const sort = searchParams.get('sort') || 'relevance';
+  const sortRaw = (searchParams.get('sort') || '').trim().toLowerCase();
+  const sort = VALID_SORT_VALUES.has(sortRaw) ? sortRaw : 'relevance';
+
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
   const page = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
 
@@ -121,31 +147,50 @@ export const countActiveFilters = (params) => {
 export const applyFilterPipeline = (products = [], params = {}) => {
   let result = [...products];
 
-  // 1. Search Query Matching (Client-Side Search with Keyword Aliases)
-  if (params.search) {
-    const rawQuery = params.search.toLowerCase().trim();
-    
-    let keywords = [rawQuery];
-    Object.keys(SEARCH_KEYWORD_ALIASES).forEach((key) => {
-      if (rawQuery.includes(key) || SEARCH_KEYWORD_ALIASES[key].includes(rawQuery)) {
-        keywords = Array.from(new Set([...keywords, ...SEARCH_KEYWORD_ALIASES[key]]));
+  // 1. Search Query Matching (Client-Side Search with Keyword Aliases & Case-Insensitive Token Matching)
+  const rawSearch = typeof params.search === 'string' ? params.search.trim() : '';
+  if (rawSearch) {
+    const normalizedQuery = rawSearch.toLowerCase().replace(/\s+/g, ' ');
+    const tokens = normalizedQuery.split(' ').filter(Boolean);
+
+    // Helper to test if a token or any of its semantic aliases appears in the text
+    const tokenMatches = (token, text) => {
+      if (text.includes(token)) return true;
+      for (const group of Object.values(SEARCH_KEYWORD_ALIASES)) {
+        if (group.includes(token)) {
+          if (group.some((alias) => text.includes(alias))) {
+            return true;
+          }
+        }
       }
-    });
+      return false;
+    };
 
     result = result.filter((p) => {
-      const title = (p.title || p.name || '').toLowerCase();
-      const description = (p.description || '').toLowerCase();
-      const brand = (p.brand || '').toLowerCase();
-      const category = (p.category || '').toLowerCase();
-      const tags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : '';
+      if (!p) return false;
+      const title = (p.title || p.name || '').toString().toLowerCase();
+      const description = (p.description || '').toString().toLowerCase();
+      const brand = (p.brand || '').toString().toLowerCase();
+      const category = (p.category || '').toString().toLowerCase();
+      const tags = Array.isArray(p.tags)
+        ? p.tags.join(' ').toLowerCase()
+        : typeof p.tags === 'string'
+        ? p.tags.toLowerCase()
+        : '';
 
-      return keywords.some((kw) =>
-        title.includes(kw) ||
-        description.includes(kw) ||
-        brand.includes(kw) ||
-        category.includes(kw) ||
-        tags.includes(kw)
-      );
+      const fullText = `${title} ${description} ${brand} ${category} ${tags}`;
+
+      // 1. Exact full query match
+      if (fullText.includes(normalizedQuery)) {
+        return true;
+      }
+
+      // 2. Token-level matching (every token or its alias must match in product metadata)
+      if (tokens.length > 0 && tokens.every((token) => tokenMatches(token, fullText))) {
+        return true;
+      }
+
+      return false;
     });
   }
 
@@ -194,19 +239,28 @@ export const applyFilterPipeline = (products = [], params = {}) => {
     result = result.filter((p) => Number(p.rating || 0) >= minRating);
   }
 
-  // 6. Sorting Order Pipeline (operates on derived copied array to ensure zero data mutation)
+  // 6. Sorting Order Pipeline (operates on derived copied array with deterministic tie-breakers)
   switch (params.sort) {
     case 'price-asc':
-      result.sort((a, b) => (a.price || 0) - (b.price || 0));
+      result.sort((a, b) => {
+        const diff = Number(a?.price || 0) - Number(b?.price || 0);
+        return diff !== 0 ? diff : (a?.id || 0) - (b?.id || 0);
+      });
       break;
     case 'price-desc':
-      result.sort((a, b) => (b.price || 0) - (a.price || 0));
+      result.sort((a, b) => {
+        const diff = Number(b?.price || 0) - Number(a?.price || 0);
+        return diff !== 0 ? diff : (a?.id || 0) - (b?.id || 0);
+      });
       break;
     case 'rating-desc':
-      result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      result.sort((a, b) => {
+        const diff = Number(b?.rating || 0) - Number(a?.rating || 0);
+        return diff !== 0 ? diff : (a?.id || 0) - (b?.id || 0);
+      });
       break;
     case 'newest':
-      result.sort((a, b) => (b.id || 0) - (a.id || 0));
+      result.sort((a, b) => (b?.id || 0) - (a?.id || 0));
       break;
     case 'relevance':
     default:
@@ -216,13 +270,20 @@ export const applyFilterPipeline = (products = [], params = {}) => {
   return result;
 };
 
-// Filter out brand selections that are incompatible with a target category
+// Filter out brand selections that are incompatible with a target category or catalog
 export const getCompatibleBrandsForCategory = (products = [], categorySlug = '', currentBrands = []) => {
   if (!currentBrands || currentBrands.length === 0) return [];
-  if (!categorySlug) return currentBrands;
 
-  const categoryProducts = applyFilterPipeline(products, { category: categorySlug });
-  const categoryBrandsSet = new Set(extractAvailableBrands(categoryProducts).map((b) => b.toLowerCase().trim()));
+  // If category is specified, scope products to that category; otherwise validate against catalog
+  const targetProducts = categorySlug
+    ? applyFilterPipeline(products, { category: categorySlug })
+    : products;
+
+  if (!targetProducts || targetProducts.length === 0) return [];
+
+  const categoryBrandsSet = new Set(
+    extractAvailableBrands(targetProducts).map((b) => b.toLowerCase().trim())
+  );
 
   return currentBrands.filter((b) => categoryBrandsSet.has(b.toLowerCase().trim()));
 };

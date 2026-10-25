@@ -32,26 +32,56 @@ export const CartProvider = ({ children }) => {
   const appliedCoupon = useSelector(selectAppliedCoupon);
 
   const addToCart = (product, quantity = 1) => {
-    if (!product || !product.id) return;
-    const maxStock = product.stock !== undefined ? product.stock : 99;
+    if (!product || product.id === undefined || product.id === null) return;
+    const maxStock =
+      typeof product.stock === 'number' && Number.isFinite(product.stock) && product.stock >= 0
+        ? product.stock
+        : 99;
+
     if (maxStock <= 0) {
       showToast('Sorry, this product is currently out of stock.');
       return;
     }
 
-    dispatch(addToCartAction({ product, quantity }));
+    const parsedQty = Math.floor(Number(quantity));
+    if (!Number.isFinite(parsedQty) || parsedQty < 1) {
+      showToast('Please enter a valid quantity of at least 1.');
+      return;
+    }
+
+    const existingItem = cartItems.find((i) => String(i.id) === String(product.id));
+    if (existingItem) {
+      const currentQty = existingItem.quantity || 1;
+      if (currentQty >= maxStock) {
+        showToast(`Item is already in your cart with maximum stock (${maxStock}).`);
+        return;
+      }
+      if (currentQty + parsedQty > maxStock) {
+        const canAdd = maxStock - currentQty;
+        dispatch(addToCartAction({ product, quantity: canAdd }));
+        showToast(`Added ${canAdd} item${canAdd > 1 ? 's' : ''} to reach maximum stock (${maxStock}).`);
+        return;
+      }
+    }
+
+    dispatch(addToCartAction({ product, quantity: parsedQty }));
     showToast('Added to cart!');
   };
 
   const removeFromCart = (productId) => {
+    if (productId === undefined || productId === null) return;
     dispatch(removeFromCartAction(productId));
     showToast('Removed from cart');
   };
 
   const increaseQuantity = (productId) => {
+    if (productId === undefined || productId === null) return;
     const item = cartItems.find((i) => String(i.id) === String(productId));
     if (item) {
-      const maxStock = item.stock !== undefined ? item.stock : 99;
+      const maxStock =
+        typeof item.stock === 'number' && Number.isFinite(item.stock) && item.stock >= 0
+          ? item.stock
+          : 99;
       if (item.quantity >= maxStock) {
         showToast(`Maximum stock limit of ${maxStock} reached.`);
         return;
@@ -61,11 +91,36 @@ export const CartProvider = ({ children }) => {
   };
 
   const decreaseQuantity = (productId) => {
-    dispatch(decreaseQuantityAction(productId));
+    if (productId === undefined || productId === null) return;
+    const item = cartItems.find((i) => String(i.id) === String(productId));
+    // Quantities cannot fall below one unless the item is removed
+    if (item) {
+      if (item.quantity <= 1) {
+        return;
+      }
+      dispatch(decreaseQuantityAction(productId));
+    }
   };
 
   const updateQuantity = (productId, quantity) => {
-    dispatch(updateQuantityAction({ productId, quantity }));
+    if (productId === undefined || productId === null) return;
+    const parsedQty = Math.floor(Number(quantity));
+    if (!Number.isFinite(parsedQty) || parsedQty < 1) {
+      showToast('Quantity must be at least 1.');
+      return;
+    }
+
+    const item = cartItems.find((i) => String(i.id) === String(productId));
+    if (item) {
+      const maxStock =
+        typeof item.stock === 'number' && Number.isFinite(item.stock) && item.stock >= 0
+          ? item.stock
+          : 99;
+      if (parsedQty > maxStock) {
+        showToast(`Maximum stock limit of ${maxStock} reached.`);
+      }
+      dispatch(updateQuantityAction({ productId, quantity: Math.min(parsedQty, maxStock) }));
+    }
   };
 
   const moveToWishlist = (productId) => {
