@@ -24,22 +24,30 @@ export const WishlistProvider = ({ children }) => {
   const wishlistCount = useSelector(selectWishlistCount);
 
   const isInWishlist = (productId) => {
-    return wishlistItems.some((item) => String(item.id) === String(productId));
+    if (productId === undefined || productId === null) return false;
+    const targetIdStr = String(productId?.id !== undefined ? productId.id : productId);
+    return wishlistItems.some((item) => item && item.id !== undefined && String(item.id) === targetIdStr);
   };
 
   const addToWishlist = (product) => {
-    if (!product || !product.id) return;
+    if (!product || product.id === undefined || product.id === null) return;
+    if (isInWishlist(product.id)) {
+      showToast('Item is already in your wishlist');
+      return;
+    }
     dispatch(addToWishlistAction(product));
     showToast('Saved to wishlist!');
   };
 
-  const removeFromWishlist = (productId) => {
-    dispatch(removeFromWishlistAction(productId));
+  const removeFromWishlist = (target) => {
+    const rawId = target?.id !== undefined ? target.id : target;
+    if (rawId === undefined || rawId === null) return;
+    dispatch(removeFromWishlistAction(rawId));
     showToast('Removed from wishlist');
   };
 
   const toggleWishlist = (product) => {
-    if (!product || !product.id) return;
+    if (!product || product.id === undefined || product.id === null) return;
     const exists = isInWishlist(product.id);
     dispatch(toggleWishlistAction(product));
     showToast(exists ? 'Removed from wishlist' : 'Saved to wishlist!');

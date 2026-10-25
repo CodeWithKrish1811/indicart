@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { formatCurrency } from '../utils/formatCurrency';
 import EmptyState from '../components/common/EmptyState';
 import ProductImage from '../components/common/ProductImage';
@@ -10,6 +11,7 @@ const Wishlist = () => {
   const navigate = useNavigate();
   const { wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { currentUser } = useAuth();
 
   const handleMoveToCart = (item) => {
     addToCart(item);
@@ -35,13 +37,16 @@ const Wishlist = () => {
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">My Wishlist</h1>
         <p className="text-sm text-slate-500 mt-1">
           {wishlistItems.length} {wishlistItems.length === 1 ? 'saved item' : 'saved items'}
+          {currentUser ? ` for ${currentUser.name || currentUser.email}` : ''}
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {wishlistItems.map((item) => {
-          const price = typeof item.price === 'number' ? item.price : 0;
-          const inStock = item.stock === undefined ? true : item.stock > 0;
+          if (!item || item.id === undefined || item.id === null) return null;
+
+          const price = typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 ? item.price : 0;
+          const inStock = typeof item.stock === 'number' ? item.stock > 0 : true;
 
           return (
             <div
@@ -52,7 +57,7 @@ const Wishlist = () => {
               <div className="w-full h-48 bg-[#F8F7FC] p-4 rounded-2xl flex items-center justify-center relative border border-slate-200/80 overflow-hidden">
                 <ProductImage
                   src={item.thumbnail}
-                  alt={item.title}
+                  alt={item.title || 'Product image'}
                   fallbackText={item.brand || item.category || 'Product'}
                   fallbackIconSize="w-10 h-10"
                   className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 drop-shadow-sm"
@@ -61,7 +66,7 @@ const Wishlist = () => {
                 <button
                   type="button"
                   onClick={() => removeFromWishlist(item.id)}
-                  aria-label="Remove from wishlist"
+                  aria-label={`Remove ${item.title || 'item'} from wishlist`}
                   className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 hover:bg-rose-50 text-slate-500 hover:text-rose-600 flex items-center justify-center shadow-xs transition cursor-pointer font-bold text-xs"
                 >
                   ✕
